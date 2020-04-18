@@ -9,19 +9,25 @@ However, since most of the rules generated appear only a handful of times, most 
 
 ### Optimised variants
 
-In order to generate a second-pass optimisation of the rules against real-world data, the top one million generated rules was run against the Pwned Passwords NTLM list using the rockyou wordlist. Any rule that cracked a password was added to its own list and poorer-performing rules were discarded. Four optimisations were created:
+In order to generate a second-pass optimisation of the rules against real-world data, the top one million generated rules was run against the Pwned Passwords NTLM list using the rockyou wordlist. Any rule that cracked a password was added to its own list and poorer-performing rules were discarded. 
 
-* `pantagrule.popular.rule`: pantagrule.1m run against the top 25,000,000 passwords of the Pwned Passwords NTLM set. 
-* `pantagrule.random.rule`: pantagrule.1m run against 25,000,000 randomly selected passwords from the entire Pwned Passwords NTLM set.
+Four optimisation types were created:
+
+* `pantagrule.popular.rule`: pantagrule.1m run against the top 25,000,000 passwords of the HIBP set.
+* `pantagrule.random.rule`: pantagrule.1m run against 25,000,000 randomly selected passwords from the HIBP set.
 * `pantagrule.hybrid.rule`: A sorted list of a combination of the most successful `popular` and `random` rules, then cut in half, in an attempt to make a lighter, "balanced" ruleset that works across a larger sample set.
-* `pantagrule.one.rule`: A version of _OneRuleToRuleThemAll_ in which the top performing `pantagrule.hybrid.rule` rules are appended, and the list is truncated to the size of the `dive` rule set. Interestingly, there is only a couple-thousand-rule overlap with _OneRuleToRuleThemAll_ and the Pantagrule rules, making the two strategies complementary. `one` offers a marginal 1.76% improvement on the top 25M passwords, and an approximately 5% gain on the top 100M over _OneRuleToRuleThemAll_, making this list perform better than other existing rule sets of this size. 
+* `pantagrule.one.rule`: A version of _OneRuleToRuleThemAll_ in which the top performing `hybrid` rules are appended, and the list is truncated to the size of the `dive` rule set. Interestingly, there is only a couple-thousand-rule overlap with _OneRuleToRuleThemAll_ and the Pantagrule rules, making the two strategies complementary. The HIBP target of `one` offers a marginal 1.76% improvement on the top 25M passwords, and an approximately 5% gain on the top 100M over _OneRuleToRuleThemAll_, making this list perform better than other existing rule sets of this size. 
 
-Note that these rulesets are also sorted by number of successful cracks on their datasets, so they may also be truncated for speed using `head`. It is recommended that you start with these rulesets. All four optimisations crack more passwords in testing than previous commonly-used rule sets.
+Note that these rulesets are also sorted by number of successful cracks on their datasets, so they may also be truncated for speed using `head`. It is recommended that you start with these rulesets. All four optimisations crack more passwords in testing than previous commonly-used rule sets. You can find these original variants in the `rules/original` folder.
+
+#### The `royce` variants
+
+As stated above, Pantagrule was originally refined against the HIBP _Pwned Passwords_ NTLM set as its target. [Upon request](https://github.com/rarecoil/pantagrule/issues/1) of hashcat contributor [Royce Williams](https://github.com/roycewilliams), optimisations of the top one million rules were also run with the [hashes.org founds list](https://github.com/rarecoil/hashes.org-list). This is due to the HIBP corpus being relatively dirty, and the hashes.org founds list being likely to yield a more practical ruleset for real-world cracking. These have been added as the `royce` variants. The `royce` optimisations appear to consist of marginally fewer rules overall, and `random.royce` is substantially more effective on a long tail of passwords than the existing `random`. Performance did not increase over the existing rules on some variants, but given that the training and validation data of the original Pantagrule are both from the _Pwned Passwords_ dataset, this does not seem  surprising. Pantagrule `royce` variants exist in the `rules/royce` folder.
 
 
 ## Performance vs. other commonly-used rules
 
-In order to test any successes of the Pantagrule strategy against other rulesets, we will take the first 100,000,000 of the Pwned Passwords prevalence-ordered NTLM list as the target. The base wordlist used in all cases is the common `rockyou.txt` wordlist. Benchmark cracking was done on an 8x1070Ti rig running hashcat 5.1.0.
+In order to test any successes of the Pantagrule strategy against other rulesets, we will take the first 100,000,000 of the Pwned Passwords prevalence-ordered NTLM list as the target. The base wordlist used in all cases is the common `rockyou.txt` wordlist. Original cracking was done on an 8x 1070Ti rig running hashcat v5.1.0. The `hashesorg`-targeted Pantagrule variants were created on a [4x Radeon VII rig](https://gist.github.com/rarecoil/54340280d81528dcb024ef5df2535c86) running hashcat git build `v5.1.0-1774-gf96594ef`.
 
 In order to note rule performance against very common passwords, 0-25M is broken out into its own column. The _RPP_ column is the _rules per percent_ on the 100M dataset. This is calculated by using the formula `rpp = Math.round(num_rules / (0_100m_percent - 6.450))`. The higher this number, the more rules are run per percentage cracked. This helps realise the diminishing returns in rulesets and gives an idea of the cost of running the rules.
 
@@ -31,8 +37,12 @@ In order to note rule performance against very common passwords, 0-25M is broken
 | No Rules (just rockyou.txt) | 0 | 16.549%  |  6.450%| N/A |
 | pantagrule.one | 99,092 | 79.814% | 69.417% | 1,574 |
 | pantagrule.hybrid | 355,205 | 81.346% | 73.372% | 5,308 |
-| pantagrule.popular | 478,736 | **81.792%** | **73.544%** | 7,135 |
+| pantagrule.popular | 478,736 | **81.792%** | 73.544% | 7,135 |
 | pantagrule.random | 616,236 | 81.687% | 69.805% | 8,828 |
+| pantagrule.one.royce | 99,092 | 79.618% | 69.092% | 1,582 |
+| pantagrule.hybrid.royce | 314,268 | 81.068% | 73.082% | 4,716 |
+| pantagrule.popular.royce | 420,984 | 81.386% | 73.102% | 6,316 |
+| pantagrule.random.royce | 592,235 | 81.659% | **74.010%** | 8,766 |
 | [best64](https://github.com/hashcat/hashcat/blob/master/rules/best64.rule) | 64 | 45.117% | 24.985% | 3 |
 | [hob064](https://github.com/praetorian-code/Hob0Rules) | 68 | 37.786% | 19.773% | 5 |
 | [OneRuleToRuleThemAll](https://github.com/NotSoSecure/password_cracking_rules) | 52,014 | 78.058% | 64.541% | 895 |
@@ -44,9 +54,9 @@ In order to note rule performance against very common passwords, 0-25M is broken
 
 ## Conclusion
 
-This work confirms the limitations of the PACK LRP algorithm originally witnessed by _NSAKEY on modern data sets when using the rockyou dictionary. While the LRP algorithm does generate rules that increase cracking percentage, it does so at a large increase in keyspace. For this reason, Pantagrule is most useful in cases where difficult cracking requires exotic rules.
+This work confirms the limitations of the PACK LRP algorithm originally witnessed by _NSAKEY on modern data sets when using the rockyou dictionary. While the LRP algorithm does generate rules that increase cracking percentage, it does so at a large increase in search space. For this reason, Pantagrule is most useful in cases where difficult cracking requires exotic rules.
 
-In this purpose, Pantagrule is successful. Pantagrule's massive rule list was originally made and honed in an attempt to break more of the long tail from the Pwned Passwords list than was being seen with existing rules. The `pantagrule.1m` list cracked 8% of the remaining HIBP hashes that had stood up to the dictionary used to generate Pantagrule, the above common rule sets, a 7-character alphanumeric brute force, and KoreLogic's [PathWell topologies](https://blog.korelogic.com/blog/2014/04/04/pathwell_topologies).
+In this purpose, Pantagrule is successful. Pantagrule's massive rule list was originally made and honed in an attempt to break more of the long tail from the Pwned Passwords list than was being seen with existing rules. The `pantagrule.1m` list cracked 8% of the remaining HIBP hashes that had stood up to the dictionary used to generate Pantagrule, the above common rule sets, a 7-character alphanumeric brute force, and KoreLogic's [PathWell topologies](https://blog.korelogic.com/blog/2014/04/04/pathwell_topologies). Since the release of Pantagrule, it has since proven successful on professional penetration testing engagements over existing rules.
 
 As even the author of the _One Rule to Rule Them All_ (Hunt, 2017) meta-rule states, there is no such thing as a rule that works better than others. Every use case is different, and every rule source may be one that helps you more than another on a specific hash dump or with a specific wordlist. Note that this data does not show _what_ has been cracked; some rules have cracked hashes that other rules have not.
 
