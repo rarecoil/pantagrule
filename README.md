@@ -50,7 +50,7 @@ In order to note rule performance against very common passwords, 0-25M is broken
 
 
 | Rules        | Number of Rules | V5 25M     | V5 100M | RPP |
-|----------------|-----------------|-----------|--------|-----|-----|
+|----------------|-----------------|-----------|--------|-----|
 | No Rules (just rockyou.txt) | 0 | 16.549% | 6.450% | N/A |
 | pantagrule.private.v5.one | 99,092 | 79.814% |69.417% | 1,574 |
 | pantagrule.private.v5.hybrid | 355,205 | 81.346% | 73.372% | 5,308 |
